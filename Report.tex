@@ -1,0 +1,299 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning}
+\geometry{margin=2cm}
+
+\title{\textbf{Báo Cáo Thực Hành Tuần 4\\ Hệ Thống Tính Lương Và Thưởng Nhân Sự}}
+\author{Mã số sinh viên: 202418834 \\ Họ tên: Trần Tuấn Anh}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{1. Mở đầu}
+Bài báo cáo này trình bày thiết kế và cài đặt cho \textbf{Hệ thống tính lương và thưởng nhân sự} (Bài tập Lab Tuần 4 - Lập trình Hướng đối tượng). Hệ thống được xây dựng bằng ngôn ngữ Java nhằm giải quyết bài toán tự động hóa việc quản lý và tính toán thu nhập hàng tháng cho nhiều loại nhân sự khác nhau trong một doanh nghiệp. 
+
+Báo cáo sẽ trình bày chi tiết từ khâu phân tích nghiệp vụ, thiết kế kiến trúc hướng đối tượng (qua sơ đồ UML), giải thích các quyết định thiết kế (kế thừa, đa hình) cho đến việc kiểm thử (Unit Test) tính đúng đắn của chương trình thông qua các tình huống biên và ngoại lệ.
+
+\textbf{Mã nguồn đầy đủ của dự án được lưu trữ công khai tại Github:} \\
+\url{https://github.com/tuananhtran109/OOP-Ex04}
+
+\section{2. Phân tích yêu cầu nghiệp vụ}
+Hệ thống cần quản lý 3 loại nhân sự với các cách tính thu nhập khác nhau:
+\begin{itemize}
+    \item \textbf{SalariedEmployee (Nhân viên hưởng lương cố định):} Nhận lương cố định và phụ cấp trách nhiệm. Thu nhập = Lương tháng + Phụ cấp + Thưởng.
+    \item \textbf{HourlyEmployee (Nhân viên làm theo giờ):} Nhận lương dựa trên số giờ làm và đơn giá. Nếu làm quá 160 giờ, phần vượt được nhân hệ số 1.5. Thu nhập = Lương cơ bản (tính theo giờ) + Thưởng.
+    \item \textbf{SalesEmployee (Nhân viên kinh doanh):} Nhận lương cơ bản cộng hoa hồng (tỷ lệ phần trăm trên doanh số). Thu nhập = Lương cơ bản + (Doanh số $\times$ Tỷ lệ hoa hồng) + Thưởng.
+\end{itemize}
+
+Ngoài ra, hệ thống cho phép kế toán:
+\begin{itemize}
+    \item Ghi nhận thưởng theo 3 cách: thưởng số tiền cố định, thưởng cố định có lý do, thưởng theo tỷ lệ phần trăm của một giá trị tham chiếu.
+    \item Quản lý danh sách nhân viên trong bảng lương (Payroll), tính tổng lương toàn công ty hoặc theo phòng ban, và tìm người có thu nhập cao nhất.
+\end{itemize}
+
+\section{3. Danh sách lớp, trách nhiệm và bất biến}
+\begin{itemize}
+    \item \textbf{Employee (Lớp cơ sở trừu tượng):}
+    \begin{itemize}
+        \item \textbf{Trách nhiệm:} Quản lý thông tin chung (mã, tên, phòng ban), quản lý tiền thưởng, định nghĩa khuôn mẫu tính lương.
+        \item \textbf{Bất biến:} Mã nhân sự, họ tên, phòng ban không được rỗng. Tiền thưởng không được âm.
+    \end{itemize}
+    \item \textbf{SalariedEmployee:}
+    \begin{itemize}
+        \item \textbf{Trách nhiệm:} Lưu trữ và kiểm tra tính hợp lệ của lương cố định, phụ cấp. Ghi đè phương thức tính lương.
+        \item \textbf{Bất biến:} Lương và phụ cấp không âm.
+    \end{itemize}
+    \item \textbf{HourlyEmployee:}
+    \begin{itemize}
+        \item \textbf{Trách nhiệm:} Quản lý số giờ làm và đơn giá giờ. Tính lương có xét hệ số vượt giờ.
+        \item \textbf{Bất biến:} Đơn giá giờ không âm. Số giờ làm từ 0 đến 250.
+    \end{itemize}
+    \item \textbf{SalesEmployee:}
+    \begin{itemize}
+        \item \textbf{Trách nhiệm:} Quản lý lương cơ bản, doanh số và tỷ lệ hoa hồng. Cho phép cập nhật thêm doanh số. Tính lương theo hoa hồng.
+        \item \textbf{Bất biến:} Lương cơ bản, doanh số không âm. Tỷ lệ hoa hồng từ 0 đến 0.3.
+    \end{itemize}
+    \item \textbf{Payroll:}
+    \begin{itemize}
+        \item \textbf{Trách nhiệm:} Quản lý danh sách nhân sự của một kỳ lương, tổng hợp lương, tìm kiếm.
+        \item \textbf{Bất biến:} Không có 2 nhân sự cùng mã trong bảng lương.
+    \end{itemize}
+\end{itemize}
+
+\section{4. Sơ đồ lớp hoàn chỉnh}
+
+Dưới đây là sơ đồ lớp chi tiết thể hiện đầy đủ các thuộc tính, phương thức, quan hệ kế thừa và kết tập giữa các lớp:
+
+\vspace{0.5cm}
+\begin{center}
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    class/.style={
+        draw, rectangle split, rectangle split parts=3,
+        rectangle split part fill={blue!10, white, white},
+        rounded corners, text width=5.5cm, align=left, font=\footnotesize
+    },
+    arrow/.style={-latex, thick}
+]
+
+% Nodes
+\node[class, text width=7.5cm] (Employee) {
+    \centering\textbf{\textit{Employee}} \\ \centering\textless\textless abstract\textgreater\textgreater
+    \nodepart{two}
+    - employeeId: String \\
+    - fullName: String \\
+    - department: String \\
+    - monthlyBonus: double
+    \nodepart{three}
+    + Employee(id, name) \\
+    + Employee(id, name, dept) \\
+    + getEmployeeId(): String \\
+    + getFullName(): String \\
+    + getDepartment(): String \\
+    + getMonthlyBonus(): double \\
+    + setDepartment(dept) \\
+    + addBonus(amount) \\
+    + addBonus(amount, reason) \\
+    + addBonus(rate, ref, reason) \\
+    + resetBonus() \\
+    \textit{+ calculateGrossPay(): double} \\
+    + getEmployeeType(): String \\
+    + displayPayrollInfo()
+};
+
+\node[class, below=2cm of Employee] (Hourly) {
+    \centering\textbf{HourlyEmployee}
+    \nodepart{two}
+    - hourlyRate: double \\
+    - workedHours: double
+    \nodepart{three}
+    + HourlyEmployee(...) \\
+    + calculateGrossPay(): double \\
+    + displayPayrollInfo()
+};
+
+\node[class, left=0.5cm of Hourly] (Salaried) {
+    \centering\textbf{SalariedEmployee}
+    \nodepart{two}
+    - monthlySalary: double \\
+    - responsibilityAllowance: double
+    \nodepart{three}
+    + SalariedEmployee(...) \\
+    + calculateGrossPay(): double \\
+    + displayPayrollInfo()
+};
+
+\node[class, right=0.5cm of Hourly] (Sales) {
+    \centering\textbf{SalesEmployee}
+    \nodepart{two}
+    - baseSalary: double \\
+    - salesRevenue: double \\
+    - commissionRate: double
+    \nodepart{three}
+    + SalesEmployee(...) \\
+    + updateSalesRevenue(amount) \\
+    + calculateGrossPay(): double \\
+    + displayPayrollInfo()
+};
+
+\node[class, right=1.5cm of Employee] (Payroll) {
+    \centering\textbf{Payroll}
+    \nodepart{two}
+    - period: String \\
+    - employees: List\textless Employee\textgreater
+    \nodepart{three}
+    + Payroll(period) \\
+    + addEmployee(emp) \\
+    + findEmployee(id): Employee \\
+    + calculateTotalPayroll(): double \\
+    + calcPayrollByDept(dept): double \\
+    + findHighestPaid(): Employee \\
+    + displayPayroll()
+};
+
+% Arrows for inheritance
+\draw[-latex, dashed, thick] (Salaried.north) |- ([yshift=-1cm]Employee.south) -- (Employee.south);
+\draw[-latex, dashed, thick] (Hourly.north) -- (Employee.south);
+\draw[-latex, dashed, thick] (Sales.north) |- ([yshift=-1cm]Employee.south) -- (Employee.south);
+
+% Arrow for aggregation
+\draw[-latex, thick] (Payroll.west) -- (Employee.east) node[midway, above] {\footnotesize 0..*};
+
+\end{tikzpicture}%
+}
+\end{center}
+\vspace{0.5cm}
+
+\section{5. Giải thích các quyết định thiết kế}
+\begin{enumerate}
+    \item \textbf{Vì sao \texttt{calculateGrossPay()} phù hợp cho ghi đè, không phải nạp chồng?} \\
+    Bởi vì mỗi loại nhân viên có công thức tính lương hoàn toàn khác nhau nhưng cùng chung một mục đích là "tính tổng lương" (cùng tham số đầu vào là rỗng). Ghi đè (Overriding) kết hợp với tính đa hình giúp gọi đúng phương thức tính lương của lớp con thông qua biến tham chiếu của lớp cha.
+    
+    \item \textbf{Vì sao \texttt{addBonus()} phù hợp cho nạp chồng?} \\
+    Cùng một hành động "thêm thưởng" nhưng kế toán có thể cung cấp các loại dữ liệu đầu vào khác nhau (chỉ có số tiền, số tiền + lý do, hoặc tỷ lệ + giá trị tham chiếu). Việc nạp chồng (Overloading) tạo ra nhiều phiên bản của hàm giúp mã linh hoạt mà không cần đổi tên hàm.
+    
+    \item \textbf{Payroll nên lưu đối tượng, tham chiếu hay con trỏ như thế nào để tránh mất hành vi lớp dẫn xuất?} \\
+    Trong Java, một danh sách \texttt{List<Employee>} luôn tự động lưu trữ các tham chiếu (reference) tới các đối tượng. Điều này đảm bảo tính đa hình hoạt động đúng: khi gọi phương thức tính lương, nó sẽ gọi đúng phương thức của lớp con thực tế mà không bị "cắt xén" (object slicing).
+    
+    \item \textbf{Lớp cơ sở Employee nên là lớp cụ thể hay lớp trừu tượng? Giải thích.} \\
+    Nên là \textbf{lớp trừu tượng (abstract class)}. Vì ta không bao giờ nên khởi tạo một đối tượng "nhân viên chung chung" mà không biết cách tính lương của họ. Khai báo trừu tượng bắt buộc các lớp dẫn xuất phải ghi đè công thức tính lương.
+    
+    \item \textbf{Nếu nhân viên kinh doanh cũng được trả theo giờ, kế thừa đơn có còn phù hợp không?} \\
+    \textbf{Không}. Kế thừa đơn sẽ gây ra hạn chế, không thể kế thừa đồng thời từ cả 2 lớp dẫn xuất (hiện tượng Diamond Problem). Trong trường hợp đó, ta nên dùng Interface để ghép nối các loại tính lương, hoặc dùng Strategy Pattern.
+    
+    \item \textbf{Có nên đặt \texttt{calculateTotalPayroll()} là thành viên static không? Vì sao?} \\
+    \textbf{Không}. Phương thức này tính tổng lương dựa trên danh sách nhân viên cụ thể của từng kỳ lương (\texttt{this.employees} của một đối tượng). Nếu là \texttt{static}, phương thức sẽ không thể truy xuất trực tiếp danh sách thuộc tính instance này.
+\end{enumerate}
+
+\section{6. Chữ ký constructor và phương thức nạp chồng, ghi đè}
+\begin{itemize}
+    \item \textbf{Constructor nạp chồng của \texttt{Employee}:}
+    \begin{itemize}
+        \item \texttt{public Employee(String employeeId, String fullName)}
+        \item \texttt{public Employee(String id, String name, String department)}
+    \end{itemize}
+    \item \textbf{Phương thức nạp chồng \texttt{addBonus} trong \texttt{Employee}:}
+    \begin{itemize}
+        \item \texttt{public void addBonus(double amount)}
+        \item \texttt{public void addBonus(double amount, String reason)}
+        \item \texttt{public void addBonus(double rate, double refAmount, String reason)}
+    \end{itemize}
+    \item \textbf{Phương thức ghi đè (Overridden):}
+    \begin{itemize}
+        \item \texttt{public double calculateGrossPay()} (Được ghi đè ở 3 lớp con)
+        \item \texttt{public void displayPayrollInfo()} (Ghi đè và dùng \texttt{super} ở 3 lớp con)
+    \end{itemize}
+\end{itemize}
+
+\textbf{Yêu cầu giải thích thêm (C.1):}
+\begin{itemize}
+    \item \textit{Phiên bản addBonus() nào được chọn trong từng lời gọi và vì sao?} Được chọn dựa vào kiểu dữ liệu và số lượng tham số truyền vào khi gọi hàm. Trình biên dịch tự động phân giải (so khớp) tham số.
+    \item \textit{Lựa chọn phương thức nạp chồng diễn ra khi nào?} Thời điểm biên dịch (compile-time).
+    \item \textit{Lựa chọn calculateGrossPay() diễn ra khi nào?} Thời điểm chạy (run-time / Late binding). JVM xác định kiểu thực tế của đối tượng trong bộ nhớ.
+    \item \textit{Nếu thay danh sách kiểu Employee bằng nhiều danh sách riêng, thiết kế thay đổi ra sao?} Lớp \texttt{Payroll} sẽ trở nên phức tạp và khó bảo trì (vi phạm Open/Closed Principle). Phải tạo nhiều hàm \texttt{addEmployee()} cho từng loại. Khi tính tổng lương, phải dùng nhiều vòng lặp riêng biệt thay vì 1 vòng lặp đa hình.
+    \item \textit{Khi thêm ContractEmployee, phần mã nào sửa / không sửa?} Chỉ cần tạo thêm lớp mới kế thừa \texttt{Employee}. \textbf{Không cần sửa} vòng lặp tính toán trong \texttt{Payroll} nhờ tính đa hình.
+\end{itemize}
+
+\section{7. Bảng tình huống kiểm thử và kết quả chạy}
+
+\subsection*{Dữ liệu hợp lệ (Theo đề bài)}
+\begin{table}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\textbf{ID} & \textbf{Nhân viên} & \textbf{Loại} & \textbf{Tính toán mong đợi} & \textbf{Kết quả thực tế} \\ \hline
+E001 & Nguyễn Minh An & Salaried & 15M + 2M + 1M = 18.000.000 & Thành công: 18.000.000 \\ \hline
+E002 & Trần Thu Bình & Hourly & 150 $\times$ 100k + 500k = 15.500.000 & Thành công: 15.500.000 \\ \hline
+E003 & Lê Hoàng Chi & Hourly & 160 $\times$ 100k + 10 $\times$ 150k = 17.500.000 & Thành công: 17.500.000 \\ \hline
+E004 & Phạm Quốc Dũng & Sales & 8M + 200M $\times$ 0.05 + 50M $\times$ 0.02 = 19.000.000 & Thành công: 19.000.000 \\ \hline
+\end{tabular}%
+}
+\end{table}
+
+\subsection*{Kiểm thử biên và lỗi}
+\begin{table}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{|c|p{4cm}|p{5cm}|p{6.5cm}|}
+\hline
+\textbf{STT} & \textbf{Quy tắc / Tình huống} & \textbf{Hành động / Dữ liệu test} & \textbf{Kết quả thực tế khi chạy (Trong Main)} \\ \hline
+1 & Họ tên không rỗng & Khởi tạo với Name = "" & Bắt đúng lỗi: "Họ tên không rỗng." \\ \hline
+2 & Lương/Phụ cấp không âm & Khởi tạo Salaried với Lương = -1500 & Bắt đúng lỗi: "Lương và phụ cấp không âm." \\ \hline
+3 & Đơn giá giờ không âm & Khởi tạo Hourly với Giá = -50000 & Bắt đúng lỗi: "Đơn giá giờ không âm." \\ \hline
+4 & Giờ làm hợp lệ [0, 250] & Khởi tạo Hourly với số giờ = 251 & Bắt đúng lỗi: "Số giờ làm hợp lệ từ 0 đến 250." \\ \hline
+5 & Tỷ lệ hoa hồng [0, 0.3] & Khởi tạo Sales với tỷ lệ = 0.4 & Bắt đúng lỗi: "Tỷ lệ hoa hồng nằm trong khoảng..." \\ \hline
+6 & Không trùng mã nhân sự & Thêm E001 lần thứ 2 vào Payroll & Bắt đúng lỗi: "Mã nhân sự đã tồn tại..." \\ \hline
+7 & Doanh số cập nhật không âm & Gọi \texttt{updateSalesRevenue(-5M)} & Bắt đúng lỗi: "Doanh số cập nhật không âm." \\ \hline
+8 & Tiền thưởng > 0 & Gọi \texttt{addBonus(-1000)} & Bắt đúng lỗi: "Thưởng phải lớn hơn 0." \\ \hline
+9 & Tỷ lệ thưởng (0, 0.5] & Gọi \texttt{addBonus(0.6, 10M, "Lý do")} & Bắt đúng lỗi: "Tỷ lệ thưởng phải lớn hơn 0..." \\ \hline
+10 & Biên giờ làm = 160 (Biên dưới hệ số) & Tính lương Hourly với 160 giờ & Thành công, tính lương = 16.000.000 \\ \hline
+11 & Biên giờ làm = 161 (Biên trên hệ số) & Tính lương Hourly với 161 giờ & Thành công, tính lương = 16.150.000 \\ \hline
+12 & Biên hoa hồng = 0.0 & Khởi tạo Sales với tỷ lệ = 0.0 & Thành công, tính lương = 8.000.000 \\ \hline
+13 & Biên hoa hồng = 0.3 & Khởi tạo Sales với tỷ lệ = 0.3 & Thành công, tính lương = 11.000.000 \\ \hline
+14 & Tìm kiếm Null & Gọi \texttt{findEmployee("E999")} & Thành công, trả về null chính xác \\ \hline
+\end{tabular}%
+}
+\end{table}
+
+\subsection*{Ảnh minh họa kết quả chạy chương trình}
+Dưới đây là hình ảnh chụp màn hình Console chứng minh kết quả chạy chương trình thực tế:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{out1.png}
+    \caption{Kết quả chạy chương trình}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{out2.png}
+    \caption{Kết quả chạy chương trình}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{out3.png}
+    \caption{Kết quả chạy chương trình}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{out4.png}
+    \caption{Kết quả chạy chương trình}
+\end{figure}
+
+\end{document}
